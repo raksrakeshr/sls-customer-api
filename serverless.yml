@@ -1,0 +1,76 @@
+service: sls
+
+custom:
+  settings:
+    CUSTOMER_TABLE: customer
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  region: us-east-1
+  environment: ${self:custom.settings}
+  iamRoleStatements:
+   - Effect: "Allow"
+     Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+     Resource:
+      - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.settings.CUSTOMER_TABLE}"
+
+functions:
+  createCustomer:
+    handler: handler.createCustomer
+    events:
+    - http:
+        path: /customer
+        method: post
+  getAllCustomers:
+    handler: handler.getAllCustomers
+    events:
+    - http:
+        path: /customer
+        method: get
+  getCustomers:
+    handler: handler.getCustomers
+    events:
+    - http:
+        path: /customers/{number}
+        method: get
+  getCustomer:
+    handler: handler.getCustomer
+    events:
+    - http:
+        path: /customer/{id}
+        method: get
+  updateCustomer:
+    handler: handler.updateCustomer
+    events:
+    - http:
+        path: /customer/{id}
+        method: put
+  deleteCustomer:
+    handler: handler.deleteCustomer
+    events:
+    - http:
+        path: /customer/{id}
+        method: delete
+
+resources:
+  Resources:
+    CustomerTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+        - AttributeName: "id"
+          AttributeType: "S"
+        KeySchema:
+        - AttributeName: "id"
+          KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.settings.CUSTOMER_TABLE}
